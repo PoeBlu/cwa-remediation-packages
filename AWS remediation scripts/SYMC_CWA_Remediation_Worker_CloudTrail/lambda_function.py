@@ -4,7 +4,7 @@ import sys
 from raise_sns_notification import *
 
 def lambda_handler(event, context):
-    remediation_check_map = dict()
+    remediation_check_map = {}
     cloud_provider_config = {}
     try:
         print('symc_cwa_remediation_worker_cloudtrail_called')
@@ -19,8 +19,10 @@ def lambda_handler(event, context):
                 print (eventKeys)
                 break
 
-        if(generateAndSendRemediationOutput):
-            print('Remediation Cloud Provider Configuration : ' + json.dumps(cloud_provider_config))
+        if generateAndSendRemediationOutput:
+            print(
+                f'Remediation Cloud Provider Configuration : {json.dumps(cloud_provider_config)}'
+            )
         else:
             print('Remediation Cloud Provider Configuration Not Provided')
 
@@ -50,7 +52,7 @@ def lambda_handler(event, context):
             cloudTrailName = str(event['resource']['name'])
             print('Creating client of Cloud Trail' )
             cloudtrail_Client = boto3.client('cloudtrail')
-            print('Enabling Cloudtrail for - ' + str(cloudTrailName))
+            print(f'Enabling Cloudtrail for - {cloudTrailName}')
             if(cloudTrail_enableInAllregion):
                 print('Enabling CloudTrail for all regions')
                 response = cloudtrail_Client.update_trail(Name=cloudTrailName, IsMultiRegionTrail=True, IncludeGlobalServiceEvents=True)
@@ -70,7 +72,9 @@ def lambda_handler(event, context):
         except:
             type, value, traceback = sys.exc_info()
             print(value)
-            print('Error occurred while calling Cloud trail update API ' + str(sys.exc_info()[0]))
+            print(
+                f'Error occurred while calling Cloud trail update API {str(sys.exc_info()[0])}'
+            )
             errorMessage = str(sys.exc_info()[0])
 
             for k in remediation_check_map:
@@ -80,9 +84,11 @@ def lambda_handler(event, context):
                     remediation_check_obj['message']=errorMessage
                     remediation_output_message["remediated_checks"].append(remediation_check_obj)
 
-        if(generateAndSendRemediationOutput):
+        if generateAndSendRemediationOutput:
             remediation_output_message_str = json.dumps(remediation_output_message)
-            print('Remediation Output Message Generated : ' + remediation_output_message_str)
+            print(
+                f'Remediation Output Message Generated : {remediation_output_message_str}'
+            )
             remediation_output_message_str_json = prepareSNSJsonMessage(remediation_output_message_str)
             raise_sns_notification(cloud_provider_config['output_sns_topic_arn'],cloud_provider_config['output_sns_topic_region'],remediation_output_message_str_json,'json')
             print('Remediation Output Message Published Succesfully to SNS.')
@@ -92,5 +98,5 @@ def lambda_handler(event, context):
             'body': json.dumps('Remediation Performed Succesfully')
         }
     except:
-        print ("Unexpected error:", str(sys.exc_info()[0]))
+        print("Unexpected error:", sys.exc_info()[0])
         raise
